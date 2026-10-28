@@ -1,0 +1,11 @@
+/* Theme, fonts and the core components come from @optica/core */
+@import '@optica/core/assets/index.css';
+
+/* brand colours of Sphaeroptica */
+:root {
+  --brand: hsl(96 12% 8%);
+}
+
+.dark {
+  --brand: hsl(100 100% 89%);
+}
