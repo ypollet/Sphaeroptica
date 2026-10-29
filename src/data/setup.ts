@@ -1,4 +1,4 @@
-import { ProviderFactory, RepositoryFactory } from "@optica/core"
+import { ProviderFactory, RepositoryFactory } from "optica-core"
 import { SphaerOrthancProvider, SphaerWebProvider, type SphaerProvider } from "./providers"
 import { SphaerRepository } from "./sphere"
 

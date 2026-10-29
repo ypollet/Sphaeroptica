@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, useTemplateRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import type { Coordinates } from '@optica/core'
+import type { Coordinates } from 'optica-core'
 import {
   ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger,
-} from '@optica/core/ui/context-menu'
-import { ImageViewer } from '@optica/core/ui/image-viewer'
-import { ProjectLoader } from '@optica/core/ui/project-loader'
+} from 'optica-core/ui/context-menu'
+import { ImageViewer } from 'optica-core/ui/image-viewer'
+import { ProjectLoader } from 'optica-core/ui/project-loader'
 import type { SphaerLandmark } from '@/data/annotations'
 import { getRepository } from '@/data/setup'
 import { useSphaerStore } from '@/lib/stores'

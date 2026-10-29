@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Coordinates, Project } from '@optica/core'
+import type { Coordinates, Project } from 'optica-core'
 import { SphaerLandmark, type SphaerAnnotations } from '@/data/annotations'
 import type { SphaerAcquisition, SphereImage } from '@/data/sphere'
 import { getRepository } from '@/data/setup'

@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse } from "axios"
-import { OrthancProvider, segment, WebProvider, type Coordinates, type DataProvider } from "@optica/core"
+import { OrthancProvider, segment, WebProvider, type Coordinates, type DataProvider } from "optica-core"
 
 // The sphaer routes, on top of the common ones. Each provider knows how its backend lays them out,
 // the ids are encoded (imageUrl does it, url(route) does not) so they can't point to another route.

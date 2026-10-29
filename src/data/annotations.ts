@@ -1,6 +1,6 @@
 import Color from "color"
 import * as math from "mathjs"
-import { DequeMax2, isScaleUnit, randomColorRGB, randomID, toScale, type AnnotationsSet, type Coordinates, type ScaleUnit } from "@optica/core"
+import { DequeMax2, isScaleUnit, randomColorRGB, randomID, toScale, type AnnotationsSet, type Coordinates, type ScaleUnit } from "optica-core"
 
 const ROUNDING = 5
 

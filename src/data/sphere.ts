@@ -1,7 +1,7 @@
 import {
     Acquisition, ProjectRepository, degreesToRad,
     type AcquisitionObject, type Coordinates, type ProjectImage,
-} from "@optica/core"
+} from "optica-core"
 import { SphaerAnnotations } from "./annotations"
 import type { SphaerProvider } from "./providers"
 

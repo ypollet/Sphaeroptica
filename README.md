@@ -1,6 +1,6 @@
 # Sphaeroptica (core)
 
-Sphaeroptica rebuilt on [`core/`](../core): the viewer, thumbnail, landmark list, menu, project model and data layer come from `@optica/core` and `optica_core`; this folder only keeps what is specific to calibrated views on a sphere.
+Sphaeroptica rebuilt on [`core/`](../core): the viewer, thumbnail, landmark list, menu, project model and data layer come from `optica-core` and `optica_core`; this folder only keeps what is specific to calibrated views on a sphere.
 
 - `app.py`: the `calibration.json` adapter of the common API. One acquisition `sphere`: every view with its `coordinates` (longitude, latitude on the sphere fitted through the camera centers). App routes: `POST /<id>/triangulate` (`{poses: {image: {x, y}}}` → `[x, y, z, 1]`), `GET /<id>/<image>/reproject?x&y&z&w`, `GET /<id>/shortcuts`.
 - `photogrammetry/`: triangulation, (un)distortion and sphere fit, copied from the old Sphaeroptica.

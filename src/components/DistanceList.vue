@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import * as math from "mathjs"
 import { PhX } from "@phosphor-icons/vue"
-import { Button } from "@optica/core/ui/button"
-import { Input } from "@optica/core/ui/input"
-import { Label } from "@optica/core/ui/label"
-import { Separator } from "@optica/core/ui/separator"
+import { Button } from "optica-core/ui/button"
+import { Input } from "optica-core/ui/input"
+import { Label } from "optica-core/ui/label"
+import { Separator } from "optica-core/ui/separator"
 import type { SphaerAnnotations, SphaerDistance } from "@/data/annotations"
 
 const STEP = 0.01
