@@ -1,13 +1,14 @@
-import { ProviderFactory, RepositoryFactory } from "optica-core"
-import { SphaerOrthancProvider, SphaerWebProvider, type SphaerProvider } from "./providers"
+import { createProvider } from "optica-core"
+import { SphaerOrthancProvider, SphaerWebProvider } from "./providers"
 import { SphaerRepository } from "./sphere"
 
-// Imported first by main.ts: the stores and components get the repository from the factories.
+// Imported first by main.ts. The backend is the one of the environment (.env: VITE_BACKEND_TYPE, VITE_BACKEND_URL).
 // Both providers replace the core ones: they add the sphaer routes.
-ProviderFactory.register("WEB", (url) => new SphaerWebProvider(url))
-ProviderFactory.register("ORTHANC", (url) => new SphaerOrthancProvider(url))
-RepositoryFactory.register("DATA", (provider) => new SphaerRepository(provider as SphaerProvider))
+const repository = new SphaerRepository(createProvider({
+    WEB: (url) => new SphaerWebProvider(url),
+    ORTHANC: (url) => new SphaerOrthancProvider(url),
+}))
 
 export function getRepository(): SphaerRepository {
-    return RepositoryFactory.get<SphaerRepository>()
+    return repository
 }

@@ -56,7 +56,7 @@ function rotate(movement: { x: number, y: number }) {
 
 // the menu of the list only opens with two landmarks selected
 function checkSelection(event: MouseEvent) {
-  if (!annotations.value?.selection.fullSelected()) {
+  if (!annotations.value?.selection.isFull()) {
     event.preventDefault()
   }
 }
@@ -94,7 +94,7 @@ function checkSelection(event: MouseEvent) {
         <ContextMenu>
           <ContextMenuTrigger class="flex w-full h-full">
             <LandmarkList v-model="annotations.landmarks" class="h-96"
-              :highlighted="(landmark) => annotations?.selection.selected(landmark.id) ?? false"
+              :highlighted="(landmark) => annotations?.selection.contains(landmark.id) ?? false"
               @activate="(landmark) => annotations?.toggleSelection(landmark.id)"
               @remove="(id) => annotations?.removeLandmark(id)" @contextmenu="checkSelection">
               <template #info="{ landmark }">

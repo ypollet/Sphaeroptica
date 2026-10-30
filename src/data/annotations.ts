@@ -1,6 +1,6 @@
 import Color from "color"
 import * as math from "mathjs"
-import { DequeMax2, isScaleUnit, randomColorRGB, randomID, toScale, type AnnotationsSet, type Coordinates, type ScaleUnit } from "optica-core"
+import { DequeMax2, isScaleUnit, randomColorRGB, randomID, type AnnotationsSet, type Coordinates, type ScaleUnit } from "optica-core"
 
 const ROUNDING = 5
 
@@ -52,9 +52,6 @@ export class SphaerLandmark {
     // incremented on each change of the position: the reprojections of an older version are stale
     version: number
     show: boolean
-    edit: boolean
-    isClicked: boolean
-    isDragged: boolean
 
     constructor(id: string, label: string, color: Color | null = null, poses: Map<string, Coordinates> = new Map(), position: number[] | undefined = undefined) {
         this.id = id
@@ -64,9 +61,6 @@ export class SphaerLandmark {
         this.position = position
         this.version = 1
         this.show = true
-        this.edit = false
-        this.isClicked = false
-        this.isDragged = false
     }
 
     equals(other: SphaerLandmark | string | null | undefined) {
@@ -76,23 +70,11 @@ export class SphaerLandmark {
         return this.id == (typeof other === "string" ? other : other.id)
     }
 
-    getId(): string {
-        return this.id
-    }
-    setLabel(label: string) {
-        this.label = label
-    }
     getColorHEX(): string {
         return this.color.hex()
     }
     setColorHEX(color: string) {
         this.color = Color(color)
-    }
-    getEdit(): boolean {
-        return this.edit
-    }
-    setEdit(edit: boolean) {
-        this.edit = edit
     }
 
     addPose(image: string, pose: Coordinates) {
@@ -130,15 +112,11 @@ export class SphaerDistance {
     label: string
     left: SphaerLandmark
     right: SphaerLandmark
-    edit_label: boolean
-    edit_distance: boolean
 
     constructor(label: string, left: SphaerLandmark, right: SphaerLandmark) {
         this.label = label
         this.left = left
         this.right = right
-        this.edit_label = false
-        this.edit_distance = false
     }
 
     // in the units of the calibration, undefined until both landmarks have a position
@@ -173,7 +151,7 @@ export class SphaerAnnotations implements AnnotationsSet {
     landmarks: SphaerLandmark[] = []
     distances: SphaerDistance[] = []
     // the two landmarks of the next distance
-    selection: DequeMax2 = new DequeMax2()
+    selection: DequeMax2<SphaerLandmark> = new DequeMax2<SphaerLandmark>()
     adjustFactor: number = 1
     scale: ScaleUnit = "m"
 
@@ -199,17 +177,21 @@ export class SphaerAnnotations implements AnnotationsSet {
 
     // distance between the two selected landmarks
     addSelectedDistance() {
-        const [left, right] = this.selection.deque.map((id) => this.getLandmark(id))
+        const [left, right] = this.selection.items
         if (left && right) {
             this.addDistance(left, right)
         }
     }
 
     toggleSelection(id: string) {
-        if (this.selection.selected(id)) {
-            this.selection.remove(id)
+        const landmark = this.getLandmark(id)
+        if (landmark == undefined) {
+            return
+        }
+        if (this.selection.contains(landmark)) {
+            this.selection.remove(landmark)
         } else {
-            this.selection.add(id)
+            this.selection.add(landmark)
         }
     }
 
@@ -217,9 +199,7 @@ export class SphaerAnnotations implements AnnotationsSet {
     removeLandmark(id: string) {
         this.distances = this.distances.filter((distance) => !distance.in(id))
         this.landmarks = this.landmarks.filter((landmark) => !landmark.equals(id))
-        if (this.selection.selected(id)) {
-            this.selection.remove(id)
-        }
+        this.selection.remove(id)
     }
 
     removeDistance(index: number) {
@@ -228,7 +208,7 @@ export class SphaerAnnotations implements AnnotationsSet {
 
     // length in the units of the calibration -> shown in the current scale
     scaled(length: number | undefined): number {
-        return length == undefined ? 0 : math.round(toScale(length, this.adjustFactor) / Scale[this.scale], ROUNDING)
+        return length == undefined ? 0 : math.round(length * this.adjustFactor / Scale[this.scale], ROUNDING)
     }
 
     // typing a known length on a distance calibrates the positions
@@ -282,17 +262,22 @@ export class SphaerAnnotations implements AnnotationsSet {
     restore(object: Partial<AnnotationsJSON>) {
         this.landmarks = []
         this.distances = []
-        this.selection = new DequeMax2()
+        this.selection = new DequeMax2<SphaerLandmark>()
         this.merge(object, true)
     }
 
     getSelection(): SphaerSelection {
-        return { selection: [...this.selection.deque] }
+        return { selection: this.selection.items.map((landmark) => landmark.id) }
     }
 
     setSelection(selection: Partial<SphaerSelection>) {
-        this.selection = new DequeMax2()
-        ;(selection.selection ?? []).filter((id) => this.getLandmark(id)).forEach((id) => this.selection.add(id))
+        this.selection = new DequeMax2<SphaerLandmark>()
+        ;(selection.selection ?? []).forEach((id) => {
+            const landmark = this.getLandmark(id)
+            if (landmark) {
+                this.selection.add(landmark)
+            }
+        })
     }
 
     // the adjusted position is in the current scale

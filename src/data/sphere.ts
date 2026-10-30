@@ -87,7 +87,7 @@ export class SphaerAcquisition extends Acquisition<SphereImage, SphaerAnnotation
 }
 
 // Standard payload, or the one of the first backends (and the Orthanc plugin):
-// { images: [{ name, coordinates }], size, thumbnails }
+// { images: [{ name, coordinates, hasThumbnail }], size }
 export function parseSphere(data: any): AcquisitionObject<SphereImage>[] {
     if (data.acquisitions) {
         return data.acquisitions
@@ -96,7 +96,6 @@ export function parseSphere(data: any): AcquisitionObject<SphereImage>[] {
         id: "sphere",
         images: (data.images as SphereImage[]).map((image) => ({ ...image, label: image.label ?? image.name })),
         size: data.size,
-        thumbnails: data.thumbnails,
     }]
 }
 

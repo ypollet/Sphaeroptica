@@ -57,7 +57,7 @@ function move(landmark: SphaerLandmark, pos: Coordinates) {
 </script>
 
 <template>
-  <ProjectLoader :load="loadProject" :query-key="['project', store.objectPath]">
+  <ProjectLoader :load="loadProject">
     <div v-if="acquisition && annotations && selectedImage" class="w-full h-full flex flex-col items-center">
       <ContextMenu>
         <ContextMenuTrigger class="flex w-full h-full">

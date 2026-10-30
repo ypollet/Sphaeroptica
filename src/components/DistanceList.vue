@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue"
 import * as math from "mathjs"
 import { PhX } from "@phosphor-icons/vue"
 import { Button } from "optica-core/ui/button"
@@ -13,6 +14,10 @@ const STEP = 0.01
 const props = defineProps<{
   annotations: SphaerAnnotations
 }>()
+
+// index of the distance whose label, or length, is being typed
+const editingLabel = ref<number | null>(null)
+const editingLength = ref<number | null>(null)
 
 function changeLabel(payload: string | number, distance: SphaerDistance) {
   distance.label = payload.toString()
@@ -29,21 +34,21 @@ function changeLength(payload: string | number, distance: SphaerDistance) {
       <div class="flex flex-row items-center justify-start space-x-3 px-3 w-full h-full">
         <span class="flex-none h-3 w-3 rounded-full border" :style="{ background: distance.left.getColorHEX() }" />
         <span class="flex-none h-3 w-3 rounded-full border" :style="{ background: distance.right.getColorHEX() }" />
-        <Label v-show="!distance.edit_label" class="flex whitespace-nowrap w-36" @dblclick="distance.edit_label = true">
+        <Label v-show="editingLabel !== index" class="flex whitespace-nowrap w-36" @dblclick="editingLabel = index">
           {{ distance.label }}
         </Label>
-        <Input v-show="distance.edit_label" type="text" :model-value="distance.label" class="flex h-auto w-36 px-0"
-          @focusout="distance.edit_label = false" @keyup.enter="distance.edit_label = false"
+        <Input v-show="editingLabel === index" type="text" :model-value="distance.label" class="flex h-auto w-36 px-0"
+          @focusout="editingLabel = null" @keyup.enter="editingLabel = null"
           @update:model-value="changeLabel($event, distance as SphaerDistance)" />
         <span>:</span>
-        <Label v-show="!distance.edit_distance" class="flex whitespace-nowrap w-36"
+        <Label v-show="editingLength !== index" class="flex whitespace-nowrap w-36"
           :title="distance.length == undefined ? 'Both landmarks need a position (posed on two views)' : undefined"
-          @dblclick="distance.edit_distance = true">
+          @dblclick="editingLength = index">
           {{ annotations.scaled(distance.length) }} {{ annotations.scale }}
         </Label>
-        <Input v-show="distance.edit_distance" type="number" :min="0" :step="STEP"
+        <Input v-show="editingLength === index" type="number" :min="0" :step="STEP"
           :model-value="annotations.scaled(distance.length)" class="flex h-auto w-36 px-0"
-          @focusout="distance.edit_distance = false" @keyup.enter="distance.edit_distance = false"
+          @focusout="editingLength = null" @keyup.enter="editingLength = null"
           @update:model-value="changeLength($event, distance as SphaerDistance)" />
         <Button class="relative flex-none w-6 h-6 p-0" variant="destructive" @click="annotations.removeDistance(index)">
           <PhX class="relative w-4 h-4 p-0" />

@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 from flask import abort, jsonify, request
 from flask_cors import cross_origin
@@ -29,23 +27,24 @@ class SphaerDataset(Dataset):
             [c.item(1) for c in centers.values()],
             [c.item(2) for c in centers.values()],
         )
+        # found once: calibration.json is large, it is not read again for each view
+        folder = self.thumbnails_folder(id, calib_file)
         images = []
         for name, C in centers.items():
             longitude, latitude = converters.get_long_lat(C - center)
-            images.append(image(name, coordinates={
-                "longitude": converters.rad2degrees(longitude),
-                "latitude": converters.rad2degrees(latitude),
-            }))
+            images.append(image(
+                name,
+                coordinates={
+                    "longitude": converters.rad2degrees(longitude),
+                    "latitude": converters.rad2degrees(latitude),
+                },
+                hasThumbnail=self.has_thumbnail(folder, name),
+            ))
         return project(acquisition(
             "sphere",
             size={"height": calib_file["intrinsics"]["height"], "width": calib_file["intrinsics"]["width"]},
             images=images,
-            thumbnails="thumbnails" in calib_file,
         ))
-
-    # the thumbnail folder is named in calibration.json
-    def thumbnail(self, id, image_id):
-        return os.path.join(self.directory(id), self.load(id)["thumbnails"]), image_id
 
     def intrinsics(self, calib_file):
         return matrix(calib_file["intrinsics"]["cameraMatrix"]), matrix(calib_file["intrinsics"]["distortionMatrix"])
