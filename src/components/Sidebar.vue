@@ -93,7 +93,7 @@ function checkSelection(event: MouseEvent) {
         </p>
         <ContextMenu>
           <ContextMenuTrigger class="flex w-full h-full">
-            <LandmarkList v-model="annotations.landmarks" class="h-96"
+            <LandmarkList v-model="annotations.landmarks" class="h-min-16 h-max-64"
               :highlighted="(landmark) => annotations?.selection.contains(landmark.id) ?? false"
               @activate="(landmark) => annotations?.toggleSelection(landmark.id)"
               @remove="(id) => annotations?.removeLandmark(id)" @contextmenu="checkSelection">
@@ -127,7 +127,7 @@ function checkSelection(event: MouseEvent) {
             <Button variant="secondary" @click="annotations.resetScale()">Reset Scale</Button>
           </div>
         </div>
-        <DistanceList class="mt-2" :annotations="annotations" />
+        <DistanceList class="mt-2 h-min-16 h-max-64" :annotations="annotations" />
       </div>
     </div>
   </div>
