@@ -1,6 +1,6 @@
 import Color from "color"
 import * as math from "mathjs"
-import { DequeMax2, isScaleUnit, randomColorRGB, randomID, type AnnotationsSet, type Coordinates, type ScaleUnit } from "optica-core"
+import { DequeMax2, randomColorRGB, randomID, readScaleUnit, type AnnotationsSet, type Coordinates, type ScaleUnit } from "optica-core"
 
 const ROUNDING = 5
 
@@ -31,13 +31,12 @@ export type DistanceJSON = {
     right: string
 }
 
-// Saved form of the annotations (export, import and persistence).
-// scaleFactor: name of the calibration in the first exports.
+// Saved form of the annotations (export, import and persistence). Every field may be missing from a file:
+// only the present ones are read (scale: a unit, a factor or { unit, factor }, see readScaleUnit)
 export type AnnotationsJSON = {
     scale_factor?: number
-    scaleFactor?: number
-    scale?: ScaleUnit
-    landmarks: Record<string, LandmarkJSON>
+    scale?: ScaleUnit | number | { unit: ScaleUnit, factor: number }
+    landmarks?: Record<string, LandmarkJSON>
     distances?: DistanceJSON[]
 }
 
@@ -250,11 +249,10 @@ export class SphaerAnnotations implements AnnotationsSet {
         })
         if (typeof object.scale_factor === "number") {
             this.adjustFactor = object.scale_factor
-        } else if (typeof object.scaleFactor === "number") {
-            this.adjustFactor = object.scaleFactor
         }
-        if (isScaleUnit(object.scale)) {
-            this.scale = object.scale
+        const unit = readScaleUnit(object.scale, Scale)
+        if (unit) {
+            this.scale = unit
         }
     }
 

@@ -101,6 +101,14 @@ export const useSphaerStore = defineStore('sphaer', {
       }
     },
 
+    // triangulates the landmarks posed on two images but without a position: old exports,
+    // or a reload during a triangulation
+    recomputePositions() {
+      this.project?.acquisitions.flatMap((acquisition) => acquisition.annotations.landmarks)
+        .filter((landmark) => landmark.position == undefined && landmark.triangulable)
+        .forEach((landmark) => this.updatePosition(landmark))
+    },
+
     // a new landmark, posed on the shown image only: no position yet
     addLandmark(pos: Coordinates) {
       const image = this.selectedImage

@@ -20,10 +20,15 @@ function exportAnnotations(format: "csv" | "json") {
   }
 }
 
-// these files, the ones of the old Sphaeroptica, or annotations by acquisition
+// these files, the ones of the old Sphaeroptica, or annotations by acquisition.
+// The landmarks posed on two images but without a position are triangulated again
 function importAnnotations(content: string) {
+  if (!store.project) {
+    return
+  }
   try {
-    store.project?.importAnnotations(JSON.parse(content))
+    store.project.importAnnotations(JSON.parse(content))
+    store.recomputePositions()
   } catch (error) {
     console.error("Annotations not imported:", error)
   }
