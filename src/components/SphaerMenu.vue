@@ -3,6 +3,7 @@ import { downloadCSV, downloadJSON, exportFilename } from 'optica-core'
 import { AppMenu } from 'optica-core/ui/app-menu'
 import { useSettingsStore, useSphaerStore } from '@/lib/stores'
 import { Credits } from '@/components/credits'
+import { HelpGuide } from '@/components/help'
 
 const settingsStore = useSettingsStore()
 const store = useSphaerStore()
@@ -39,6 +40,9 @@ function importAnnotations(content: string) {
   <AppMenu :reverse="settingsStore.isLeft" @update:reverse="settingsStore.useToggleLeft" app-name="Sphaeroptica"
     :importable="store.project != null" :exportable="store.project != null"
     @export="exportAnnotations" @import="importAnnotations">
+    <template #help-guide>
+      <HelpGuide />
+    </template>
     <template #credits>
       <Credits />
     </template>
