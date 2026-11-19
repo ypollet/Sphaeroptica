@@ -22,7 +22,7 @@ Exports keep the old JSON format (`landmarks` by id with `poses` and `position`,
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
 OPTICA_DATA_FOLDER=../sphaer-old/data .venv/bin/flask --app app run --port 5000
 
-# frontend (http://localhost:5173/?series=<id>)
+# frontend (http://localhost:5173/?object=<id>)
 npm install
 npm run dev
 ```

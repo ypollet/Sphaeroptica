@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePersistedAnnotations } from 'optica-core'
+import { usePersistedAnnotations, objectFromUrl } from 'optica-core'
 import { Scale } from '@/data/annotations'
 import { Separator } from 'optica-core/ui/separator'
 import { MainLogo } from '@/components/logo'
@@ -11,10 +11,9 @@ import { useSettingsStore, useSphaerStore } from '@/lib/stores'
 const settingsStore = useSettingsStore()
 const store = useSphaerStore()
 
-const urlParams = new URLSearchParams(window.location.search)
-store.setPath(urlParams.get('series') ?? "")
+store.setPath(objectFromUrl())
 
-// the annotations survive a reload (sessionStorage, by series),
+// the annotations survive a reload (sessionStorage, by object),
 // the positions lost by it are computed again
 usePersistedAnnotations(() => store.project, { onRestored: () => store.recomputePositions(), scales: Scale })
 </script>
@@ -38,7 +37,7 @@ usePersistedAnnotations(() => store.project, { onRestored: () => store.recompute
       </div>
     </div>
     <div v-else class="rest_height flex justify-center items-center text-4xl text-red-600 dark:text-red-400">
-      Error 404 : please select a valid URL (?series=&lt;object&gt;)
+      Error 404 : please select a valid URL (?object=&lt;object&gt;)
     </div>
   </main>
 </template>
