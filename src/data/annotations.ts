@@ -1,6 +1,9 @@
 import Color from "color"
 import * as math from "mathjs"
-import { DequeMax2, randomColorRGB, randomID, readScaleUnit, type AnnotationsSet, type Coordinates, type ScaleUnit } from "optica-core"
+import {
+    DequeMax2, isFiniteNumber, isRecord, isScaleUnit, randomColorRGB, randomID, readColor, readItem, readLabel, readList, readRecord,
+    type AnnotationsSet, type Coordinates, type ScaleUnit,
+} from "optica-core"
 
 const ROUNDING = 5
 
@@ -31,11 +34,12 @@ export type DistanceJSON = {
     right: string
 }
 
-// Saved form of the annotations (export, import and persistence). Every field may be missing from a file:
-// only the present ones are read (scale: a unit, a factor or { unit, factor }, see readScaleUnit)
+// Saved form of the annotations, in the acquisitions of an AnnotationsFile (export, import and persistence;
+// the exports made before it are upgraded by readAnnotationsFile with this Scale). Every field may be missing:
+// only the present ones are read. scale.factor: the size of the unit in meters
 export type AnnotationsJSON = {
-    scale_factor?: number
-    scale?: ScaleUnit | number | { unit: ScaleUnit, factor: number }
+    scaleFactor?: number
+    scale?: { unit: ScaleUnit, factor: number }
     landmarks?: Record<string, LandmarkJSON>
     distances?: DistanceJSON[]
 }
@@ -101,8 +105,15 @@ export class SphaerLandmark {
         return { label: this.label, color: this.getColorHEX(), position: this.position, poses: Object.fromEntries(this.poses) }
     }
 
-    static fromJSON(id: string, object: LandmarkJSON): SphaerLandmark {
-        return new SphaerLandmark(id, object.label, Color(object.color), new Map(Object.entries(object.poses ?? {})), object.position ?? undefined)
+    // a saved landmark: its poses that can be read, a random color when it has none, and no position when
+    // it can't be read (triangulated again from the poses, see recomputePositions)
+    static fromJSON(id: string, object: LandmarkJSON | Record<string, any>): SphaerLandmark {
+        const poses = Object.entries(readRecord(object.poses, "poses"))
+            .filter((entry): entry is [string, Coordinates] => isRecord(entry[1]) && isFiniteNumber(entry[1].x) && isFiniteNumber(entry[1].y))
+            .map(([image, pose]) => [image, { x: pose.x, y: pose.y }] as [string, Coordinates])
+        const position = Array.isArray(object.position) && object.position.length >= 3 && object.position.every(isFiniteNumber)
+            ? object.position as number[] : undefined
+        return new SphaerLandmark(id, readLabel(object.label, id), readColor(object.color), new Map(poses), position)
     }
 }
 
@@ -224,35 +235,41 @@ export class SphaerAnnotations implements AnnotationsSet {
 
     toJSON(): AnnotationsJSON {
         return {
-            scale_factor: this.adjustFactor,
-            scale: this.scale,
+            scaleFactor: this.adjustFactor,
+            scale: { unit: this.scale, factor: Scale[this.scale] },
             landmarks: Object.fromEntries(this.landmarks.map((landmark) => [landmark.id, landmark.toJSON()])),
             distances: this.distances.map((distance) => distance.toJSON()),
         }
     }
 
     // Adds saved annotations to these ones (import): the landmarks get new ids,
-    // so a file imported twice gives two sets of landmarks
+    // so a file imported twice gives two sets of landmarks.
+    // A section that is missing, null or of another type is empty, an item that can't be read is skipped
+    // (a distance whose landmarks aren't there too) and unknown sections are ignored (see readList in optica-core)
     merge(object: Partial<AnnotationsJSON>, keepIDs: boolean = false) {
+        if (!isRecord(object)) {
+            return
+        }
         const ids = new Map<string, SphaerLandmark>()
-        Object.entries(object.landmarks ?? {}).forEach(([id, landmarkObject]) => {
-            const landmark = SphaerLandmark.fromJSON(keepIDs ? id : this.generateID(), landmarkObject)
-            ids.set(id, landmark)
-            this.landmarks.push(landmark)
+        Object.entries(readRecord(object.landmarks, "landmarks")).forEach(([id, landmarkObject]) => {
+            const landmark = readItem(landmarkObject, (item) => SphaerLandmark.fromJSON(keepIDs ? id : this.generateID(), item), "landmark")
+            if (landmark) {
+                ids.set(id, landmark)
+                this.landmarks.push(landmark)
+            }
         })
-        ;(object.distances ?? []).forEach((distance) => {
+        readList(object.distances, (distance) => distance, "distance").forEach((distance) => {
             const left = ids.get(distance.left)
             const right = ids.get(distance.right)
             if (left && right) {
-                this.addDistance(left, right, distance.label)
+                this.addDistance(left, right, readLabel(distance.label))
             }
         })
-        if (typeof object.scale_factor === "number") {
-            this.adjustFactor = object.scale_factor
+        if (typeof object.scaleFactor === "number") {
+            this.adjustFactor = object.scaleFactor
         }
-        const unit = readScaleUnit(object.scale, Scale)
-        if (unit) {
-            this.scale = unit
+        if (isScaleUnit(object.scale?.unit)) {
+            this.scale = object.scale.unit
         }
     }
 

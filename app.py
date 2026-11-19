@@ -6,29 +6,32 @@ from optica_core import Dataset, acquisition, create_app, image, project
 from photogrammetry import converters, helpers, reconstruction
 
 
-def matrix(info):
-    return np.matrix(info["data"]).reshape(info["shape"]["row"], info["shape"]["col"])
-
-
 class SphaerDataset(Dataset):
-    """Calibrated views around an object, on a sphere (calibration.json)."""
+    """Calibrated views around an object, on a sphere (calibration.json, in meters)."""
 
     manifest = "calibration.json"
+    viewer = "sphaeroptica"
+
+    # the only acquisition: the views of the sphere
+    @staticmethod
+    def sphere(manifest):
+        return manifest["acquisitions"][0]
 
     def images(self, id):
-        calib_file = self.load(id)
+        manifest = self.load(id)
+        sphere = self.sphere(manifest)
         # camera centers, to place each view on the sphere fitted through them
         centers = {}
-        for name, extrinsics in calib_file["extrinsics"].items():
-            mat = matrix(extrinsics["matrix"])
-            centers[name] = converters.get_camera_world_coordinates(mat[0:3, 0:3], mat[0:3, 3]).reshape(3, 1)
+        for entry in sphere["images"]:
+            mat = np.matrix(entry["extrinsics"])
+            centers[entry["file"]] = converters.get_camera_world_coordinates(mat[0:3, 0:3], mat[0:3, 3]).reshape(3, 1)
         _, center = reconstruction.sphereFit(
             [c.item(0) for c in centers.values()],
             [c.item(1) for c in centers.values()],
             [c.item(2) for c in centers.values()],
         )
         # found once: calibration.json is large, it is not read again for each view
-        folder = self.thumbnails_folder(id, calib_file)
+        folder = self.thumbnails_folder(id, manifest)
         images = []
         for name, C in centers.items():
             longitude, latitude = converters.get_long_lat(C - center)
@@ -40,28 +43,24 @@ class SphaerDataset(Dataset):
                 },
                 hasThumbnail=self.has_thumbnail(folder, name),
             ))
-        return project(acquisition(
-            "sphere",
-            size={"height": calib_file["intrinsics"]["height"], "width": calib_file["intrinsics"]["width"]},
-            images=images,
-        ))
+        return project(acquisition(sphere["id"], label=sphere.get("label"), size=sphere["size"], images=images),
+                       unit=manifest["unit"])
 
-    def intrinsics(self, calib_file):
-        return matrix(calib_file["intrinsics"]["cameraMatrix"]), matrix(calib_file["intrinsics"]["distortionMatrix"])
+    def intrinsics(self, manifest):
+        calibration = self.sphere(manifest)["calibration"]
+        return np.matrix(calibration["cameraMatrix"]), np.matrix(calibration["distortion"])
 
-    def extrinsics(self, calib_file, image_id):
-        extrinsics = calib_file["extrinsics"].get(image_id)
-        if extrinsics is None:
-            abort(404)
-        return matrix(extrinsics["matrix"])
+    def extrinsics(self, manifest, image_id):
+        _, entry = self.find_image(manifest, image_id)
+        return np.matrix(entry["extrinsics"])
 
     # 3D position (homogeneous [x, y, z, 1]) of a landmark from its poses on at least two images
     def triangulate(self, id, poses):
-        calib_file = self.load(id)
-        intrinsics, dist_coeffs = self.intrinsics(calib_file)
+        manifest = self.load(id)
+        intrinsics, dist_coeffs = self.intrinsics(manifest)
         proj_points = []
         for image_id, pose in poses.items():
-            proj_mat = reconstruction.projection_matrix(intrinsics, self.extrinsics(calib_file, image_id))
+            proj_mat = reconstruction.projection_matrix(intrinsics, self.extrinsics(manifest, image_id))
             undistorted_pos = reconstruction.undistort_iter(
                 np.array([[pose["x"], pose["y"]]]).reshape((1, 1, 2)), intrinsics, dist_coeffs
             )
@@ -70,14 +69,16 @@ class SphaerDataset(Dataset):
 
     # pixel of an image where a 3D position is seen
     def reproject(self, id, image_id, position):
-        calib_file = self.load(id)
-        intrinsics, dist_coeffs = self.intrinsics(calib_file)
-        pose = reconstruction.project_points(position, intrinsics, self.extrinsics(calib_file, image_id), dist_coeffs)
+        manifest = self.load(id)
+        intrinsics, dist_coeffs = self.intrinsics(manifest)
+        pose = reconstruction.project_points(position, intrinsics, self.extrinsics(manifest, image_id), dist_coeffs)
         return {"x": pose.item(0), "y": pose.item(1)}
 
-    # named views (FRONT, LEFT, SUPERIOR...) -> {longitude, latitude}
+    # named views (FRONT, LEFT, SUPERIOR...) -> {longitude, latitude} in degrees
     def shortcuts(self, id):
-        return self.load(id).get("commands", {})
+        manifest = self.load(id)
+        return {name: {key: self.degrees(manifest, value) for key, value in view.items()}
+                for name, view in self.sphere(manifest).get("shortcuts", {}).items()}
 
 
 app = create_app(SphaerDataset, logo="Sphaeroptica", version="3.0.0")

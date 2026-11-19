@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { usePersistedAnnotations } from 'optica-core'
+import { Scale } from '@/data/annotations'
 import { Separator } from 'optica-core/ui/separator'
 import { MainLogo } from '@/components/logo'
 import Sidebar from '@/components/Sidebar.vue'
@@ -15,7 +16,7 @@ store.setPath(urlParams.get('series') ?? "")
 
 // the annotations survive a reload (sessionStorage, by series),
 // the positions lost by it are computed again
-usePersistedAnnotations(() => store.project, { onRestored: () => store.recomputePositions() })
+usePersistedAnnotations(() => store.project, { onRestored: () => store.recomputePositions(), scales: Scale })
 </script>
 
 <template>

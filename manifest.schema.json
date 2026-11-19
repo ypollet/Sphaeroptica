@@ -1,0 +1,118 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:optica:sphaeroptica:manifest:1",
+    "title": "Sphaeroptica manifest (calibration.json), version 1",
+    "description": "Calibrated views around the object, in meters: one acquisition, the sphere of views. The common fields are in core/api/optica_core/manifest.schema.json.",
+    "allOf": [
+        {
+            "$ref": "urn:optica:manifest:1"
+        }
+    ],
+    "required": [
+        "angleUnit"
+    ],
+    "properties": {
+        "viewer": {
+            "const": "sphaeroptica"
+        },
+        "acquisitions": {
+            "maxItems": 1,
+            "items": {
+                "$ref": "#/$defs/acquisition"
+            }
+        },
+        "unit": {
+            "const": "m"
+        }
+    },
+    "$defs": {
+        "acquisition": {
+            "description": "The views; positions come from the calibration, not from a pixel size",
+            "allOf": [
+                {
+                    "$ref": "urn:optica:manifest:1#/$defs/acquisition"
+                }
+            ],
+            "required": [
+                "calibration",
+                "images"
+            ],
+            "properties": {
+                "pixelSize": {
+                    "type": "null"
+                },
+                "calibration": {
+                    "type": "object",
+                    "required": [
+                        "cameraMatrix",
+                        "distortion"
+                    ],
+                    "properties": {
+                        "cameraMatrix": {
+                            "$ref": "urn:optica:manifest:1#/$defs/matrix",
+                            "description": "3x3 intrinsic matrix, in pixels",
+                            "minItems": 3,
+                            "maxItems": 3
+                        },
+                        "distortion": {
+                            "description": "OpenCV distortion coefficients (k1, k2, p1, p2, k3)",
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "shortcuts": {
+                    "description": "Named views (FRONT, LEFT, SUPERIOR...) on the sphere, longitude and latitude in angleUnit",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                            "longitude",
+                            "latitude"
+                        ],
+                        "properties": {
+                            "longitude": {
+                                "type": "number"
+                            },
+                            "latitude": {
+                                "type": "number"
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "standaloneImages": false,
+                "images": {
+                    "items": {
+                        "$ref": "#/$defs/view"
+                    }
+                }
+            },
+            "unevaluatedProperties": false
+        },
+        "view": {
+            "description": "A calibrated view",
+            "allOf": [
+                {
+                    "$ref": "urn:optica:manifest:1#/$defs/image"
+                }
+            ],
+            "required": [
+                "extrinsics"
+            ],
+            "properties": {
+                "extrinsics": {
+                    "$ref": "urn:optica:manifest:1#/$defs/matrix",
+                    "description": "3x4 [R|t] world -> camera, t in the unit of the manifest",
+                    "minItems": 3,
+                    "maxItems": 3
+                },
+                "pixelSize": false
+            },
+            "unevaluatedProperties": false
+        }
+    }
+}
